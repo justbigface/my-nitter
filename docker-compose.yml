@@ -1,0 +1,36 @@
+version: "3.9"
+
+services:
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+
+  nitter:
+    image: zedeus/nitter:latest
+    environment:
+      - NITTER_HOST=0.0.0.0
+      - NITTER_PORT=8080
+      - NITTER_REDIS_HOST=redis
+      - NITTER_HTTPS=false
+    depends_on:
+      - redis
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:1.25-alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nitter.conf:/etc/nginx/conf.d/default.conf:ro
+      - nginx-cache:/var/cache/nginx
+    depends_on:
+      - nitter
+    restart: unless-stopped
+
+volumes:
+  redis-data:
+  nginx-cache:
